@@ -1,0 +1,37 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isOwner() {
+      return request.auth != null
+        && request.auth.token.email == 'yetsion@gmail.com'
+        && request.auth.token.email_verified == true;
+    }
+
+    match /sites/teneOmarimRain/rainfallEntries/{entryId} {
+      allow read: if true;
+      allow create, update: if isOwner()
+        && request.resource.data.keys().hasOnly(['date', 'mm', 'note', 'createdAt'])
+        && request.resource.data.date is string
+        && request.resource.data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && request.resource.data.mm is number
+        && request.resource.data.mm > 0
+        && request.resource.data.mm <= 500
+        && request.resource.data.note is string
+        && request.resource.data.note.size() <= 300;
+      allow delete: if isOwner();
+    }
+
+    match /sites/teneOmarimRain/gallery/{photoId} {
+      allow read: if true;
+      allow create, update: if isOwner()
+        && request.resource.data.keys().hasOnly(['caption', 'date', 'path', 'url', 'createdAt'])
+        && request.resource.data.caption is string
+        && request.resource.data.caption.size() <= 200
+        && request.resource.data.date is string
+        && request.resource.data.path is string
+        && request.resource.data.path.matches('^tene-omarim-rain/gallery/.+')
+        && request.resource.data.url is string;
+      allow delete: if isOwner();
+    }
+  }
+}

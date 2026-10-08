@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft, CalendarDays, Camera, Check, CloudRain, Droplets, ExternalLink,
   ImagePlus, LogIn, LogOut, Menu, Plus, ShieldCheck, Trash2, X,
@@ -173,9 +173,12 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [selectedYear, setSelectedYear] = useState(seasonStart(todayInIsrael()));
   const [adminOpen, setAdminOpen] = useState(adminMode);
+  const [activePhotoId, setActivePhotoId] = useState(null);
+  const photoTriggerRef = useRef(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [message, setMessage] = useState('');
   const [dataError, setDataError] = useState('');
+  const activePhoto = photos.find(photo => photo.id === activePhotoId);
 
   useEffect(() => {
     if (!db || !auth) return undefined;
@@ -195,6 +198,18 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [message]);
 
+  useEffect(() => {
+    if (!activePhoto) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    const onKeyDown = event => { if (event.key === 'Escape') closePhoto(); };
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [activePhoto]);
+
   const seasons = useMemo(() => [...new Set([seasonStart(todayInIsrael()), ...entries.map(item => seasonStart(item.date))])].sort((a, b) => b - a), [entries]);
   const seasonEntries = useMemo(() => entries.filter(item => seasonStart(item.date) === selectedYear), [entries, selectedYear]);
   const total = seasonEntries.reduce((sum, item) => sum + Number(item.mm), 0);
@@ -207,6 +222,11 @@ export default function App() {
     catch (error) { setMessage(`הכניסה נכשלה: ${error.message}`); }
   }
 
+  function closePhoto() {
+    setActivePhotoId(null);
+    requestAnimationFrame(() => photoTriggerRef.current?.focus());
+  }
+
   return <div className="site-shell">
     <header className="site-header"><div className="container header-inner"><a className="brand" href="#top" aria-label="גשם בטנא עומרים - ראש העמוד"><span className="brand-mark"><Droplets size={25} strokeWidth={1.8}/></span><span><strong>גשם בטנא עומרים</strong><small>מד הגשם המקומי · הר חברון</small></span></a><nav className={menuOpen ? 'main-nav open' : 'main-nav'} aria-label="ניווט ראשי"><a href="#season" onClick={() => setMenuOpen(false)}>העונה</a><a href="#readings" onClick={() => setMenuOpen(false)}>מדידות</a><a href="#gallery" onClick={() => setMenuOpen(false)}>תמונות</a><a href="#about" onClick={() => setMenuOpen(false)}>על המדידה</a></nav><div className="header-actions">{adminMode && <button className="admin-link" onClick={() => setAdminOpen(true)}><span>עדכון נתונים</span><Plus size={17}/></button>}<button className="mobile-menu icon-button" onClick={() => setMenuOpen(!menuOpen)} aria-label={menuOpen ? 'סגירת תפריט' : 'פתיחת תפריט'}>{menuOpen ? <X/> : <Menu/>}</button></div></div></header>
 
@@ -216,11 +236,12 @@ export default function App() {
 
     <section id="readings" className="readings-section"><div className="container readings-grid"><div className="panel chart-panel"><div className="panel-heading"><div><span className="eyebrow">מבט לאורך העונה</span><h2>מתי ירד הגשם?</h2></div><span className="panel-unit">מילימטרים בחודש</span></div><RainChart entries={seasonEntries} year={selectedYear}/></div><div className="panel recent-panel"><div className="panel-heading"><div><span className="eyebrow">יומן מקומי</span><h2>מדידות אחרונות</h2></div></div>{seasonEntries.length ? <div className="reading-list">{seasonEntries.slice(0, 5).map(item => <div className="reading-item" key={item.id}><div className="reading-drop"><Droplets size={17}/></div><div><strong>{displayDate(item.date)}</strong><span>{item.note || 'מדידה ממד הגשם בחצר'}</span></div><b>{formatMm(Number(item.mm))} <small>מ״מ</small></b></div>)}</div> : <div className="recent-empty"><span className="empty-rain">☂</span><strong>ממתינים למדידה הראשונה</strong><p>כשתירשם מדידה, היא תופיע כאן ובגרף.</p></div>}</div></div></section>
 
-    <section id="gallery" className="gallery-section"><div className="container"><div className="section-heading gallery-heading"><div><span className="eyebrow">רגעים מההר</span><h2>טנא עומרים בתמונות</h2><p>נוף, עננים, שלוליות ורגעים של חורף ביישוב</p></div><span className="gallery-count"><Camera size={18}/> {photos.length} תמונות</span></div>{photos.length ? <div className="gallery-grid">{photos.map(photo => <figure className="photo-card" key={photo.id}><img src={photo.url} alt={photo.caption || 'תמונה מטנא עומרים'} loading="lazy"/><figcaption><strong>{photo.caption || 'רגע מטנא עומרים'}</strong><span>{displayDate(photo.date)}</span></figcaption></figure>)}</div> : <div className="gallery-placeholder"><div className="placeholder-art"><div className="placeholder-sun"/><div className="placeholder-hill one"/><div className="placeholder-hill two"/><Camera size={46} strokeWidth={1.2}/></div><div><h3>התמונות הראשונות בדרך</h3><p>כאן נאסוף תמונות מן היישוב ומימי הגשם בהר חברון.</p></div></div>}</div></section>
+    <section id="gallery" className="gallery-section"><div className="container"><div className="section-heading gallery-heading"><div><span className="eyebrow">רגעים מההר</span><h2>טנא עומרים בתמונות</h2><p>נוף, עננים, שלוליות ורגעים של חורף ביישוב</p></div><span className="gallery-count"><Camera size={18}/> {photos.length} תמונות</span></div>{photos.length ? <div className="gallery-grid">{photos.map(photo => <figure className="photo-card" key={photo.id}><button className="photo-open" onClick={event => { photoTriggerRef.current = event.currentTarget; setActivePhotoId(photo.id); }} aria-label={`הצגת תמונה בגודל מלא: ${photo.caption || 'טנא עומרים'}`}><img src={photo.url} alt="" loading="lazy"/></button><figcaption><strong>{photo.caption || 'רגע מטנא עומרים'}</strong><span>{displayDate(photo.date)}</span></figcaption></figure>)}</div> : <div className="gallery-placeholder"><div className="placeholder-art"><div className="placeholder-sun"/><div className="placeholder-hill one"/><div className="placeholder-hill two"/><Camera size={46} strokeWidth={1.2}/></div><div><h3>התמונות הראשונות בדרך</h3><p>כאן נאסוף תמונות מן היישוב ומימי הגשם בהר חברון.</p></div></div>}</div></section>
 
     <section id="about" className="about-section"><div className="container about-grid"><div><span className="eyebrow">איך מודדים?</span><h2>סיפור קטן<br/>של כל טיפה</h2><p>הנתונים באתר נמדדים במד גשם פרטי בחצר בטנא עומרים ומוזנים לאחר קריאה ידנית. הסיכום העונתי מחושב מתוך המדידות שנרשמו, מתחילת אוגוסט ועד סוף יולי.</p><p>המדידות מייצגות נקודה אחת ביישוב, ולכן עשויות להיות שונות מנתוני תחנה מטאורולוגית סמוכה.</p></div><a className="official-card" href="https://ims.gov.il/he/AccumulatedRain" target="_blank" rel="noopener noreferrer"><span className="official-icon"><ExternalLink size={23}/></span><span className="eyebrow">להרחבת התמונה</span><strong>נתוני הגשם של השירות המטאורולוגי</strong><span>לצפייה במדידות הרשמיות ובנתונים מתחנות ברחבי הארץ</span><span className="official-link">מעבר לאתר השירות המטאורולוגי <ArrowLeft size={17}/></span></a></div></section></main>
 
     <footer className="site-footer"><div className="container footer-inner"><div className="footer-brand"><Droplets size={22}/><span>גשם בטנא עומרים</span></div><p>מדידות מקומיות מהר חברון · נבנה באהבה לגשם</p>{adminMode && <button onClick={() => setAdminOpen(true)}>כניסת מנהל</button>}</div></footer>
+    {activePhoto && <div className="photo-lightbox" onMouseDown={event => { if (event.target === event.currentTarget) closePhoto(); }}><section className="photo-lightbox-dialog" role="dialog" aria-modal="true" aria-labelledby="photo-title"><button className="photo-close" onClick={closePhoto} aria-label="סגירת התמונה" autoFocus><X size={24}/></button><img src={activePhoto.url} alt={activePhoto.caption || 'תמונה מטנא עומרים'}/><div className="photo-lightbox-caption"><div><strong id="photo-title">{activePhoto.caption || 'רגע מטנא עומרים'}</strong><span>{displayDate(activePhoto.date)}</span></div><a href={activePhoto.url} target="_blank" rel="noopener noreferrer">פתיחת הקובץ המקורי <ExternalLink size={16}/></a></div></section></div>}
     {adminOpen && <AdminDialog onClose={() => setAdminOpen(false)} user={user} onLogin={login} onLogout={() => signOut(auth)} entries={entries} photos={photos} setMessage={setMessage}/>}
     {message && <div className="toast" role="status">{message}<button onClick={() => setMessage('')} aria-label="סגירה"><X size={16}/></button></div>}
   </div>;

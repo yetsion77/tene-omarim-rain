@@ -167,11 +167,12 @@ function AdminDialog({ onClose, user, onLogin, onLogout, entries, photos, setMes
 }
 
 export default function App() {
+  const adminMode = new URLSearchParams(window.location.search).get('admin') === '1';
   const [entries, setEntries] = useState([]);
   const [photos, setPhotos] = useState([]);
   const [user, setUser] = useState(null);
   const [selectedYear, setSelectedYear] = useState(seasonStart(todayInIsrael()));
-  const [adminOpen, setAdminOpen] = useState(false);
+  const [adminOpen, setAdminOpen] = useState(adminMode);
   const [menuOpen, setMenuOpen] = useState(false);
   const [message, setMessage] = useState('');
   const [dataError, setDataError] = useState('');
@@ -207,7 +208,7 @@ export default function App() {
   }
 
   return <div className="site-shell">
-    <header className="site-header"><div className="container header-inner"><a className="brand" href="#top" aria-label="גשם בטנא עומרים - ראש העמוד"><span className="brand-mark"><Droplets size={25} strokeWidth={1.8}/></span><span><strong>גשם בטנא עומרים</strong><small>מד הגשם המקומי · הר חברון</small></span></a><nav className={menuOpen ? 'main-nav open' : 'main-nav'} aria-label="ניווט ראשי"><a href="#season" onClick={() => setMenuOpen(false)}>העונה</a><a href="#readings" onClick={() => setMenuOpen(false)}>מדידות</a><a href="#gallery" onClick={() => setMenuOpen(false)}>תמונות</a><a href="#about" onClick={() => setMenuOpen(false)}>על המדידה</a></nav><div className="header-actions"><button className="admin-link" onClick={() => setAdminOpen(true)}><span>עדכון נתונים</span><Plus size={17}/></button><button className="mobile-menu icon-button" onClick={() => setMenuOpen(!menuOpen)} aria-label={menuOpen ? 'סגירת תפריט' : 'פתיחת תפריט'}>{menuOpen ? <X/> : <Menu/>}</button></div></div></header>
+    <header className="site-header"><div className="container header-inner"><a className="brand" href="#top" aria-label="גשם בטנא עומרים - ראש העמוד"><span className="brand-mark"><Droplets size={25} strokeWidth={1.8}/></span><span><strong>גשם בטנא עומרים</strong><small>מד הגשם המקומי · הר חברון</small></span></a><nav className={menuOpen ? 'main-nav open' : 'main-nav'} aria-label="ניווט ראשי"><a href="#season" onClick={() => setMenuOpen(false)}>העונה</a><a href="#readings" onClick={() => setMenuOpen(false)}>מדידות</a><a href="#gallery" onClick={() => setMenuOpen(false)}>תמונות</a><a href="#about" onClick={() => setMenuOpen(false)}>על המדידה</a></nav><div className="header-actions">{adminMode && <button className="admin-link" onClick={() => setAdminOpen(true)}><span>עדכון נתונים</span><Plus size={17}/></button>}<button className="mobile-menu icon-button" onClick={() => setMenuOpen(!menuOpen)} aria-label={menuOpen ? 'סגירת תפריט' : 'פתיחת תפריט'}>{menuOpen ? <X/> : <Menu/>}</button></div></div></header>
 
     <main id="top"><section className="hero"><div className="container hero-grid"><div className="hero-content"><div className="hero-kicker"><span className="live-dot"/> מדידות מקומיות מטנא עומרים</div><h1>כשהגשם יורד<br/><em>על ההר</em></h1><p>יומן הגשם של טנא עומרים — כל טיפה שנמדדה בחצר, במקום אחד.</p><a className="hero-cta" href="#season">לנתוני העונה <ArrowLeft size={18}/></a><div className="hero-note"><CloudRain size={18}/><span>מדידה עצמאית · מתעדכן לאחר כל קריאה במד הגשם</span></div></div><div className="hero-art"><Landscape/><div className="art-caption">טנא עומרים, הרי חברון <span>איור</span></div></div></div></section>
 
@@ -219,7 +220,7 @@ export default function App() {
 
     <section id="about" className="about-section"><div className="container about-grid"><div><span className="eyebrow">איך מודדים?</span><h2>סיפור קטן<br/>של כל טיפה</h2><p>הנתונים באתר נמדדים במד גשם פרטי בחצר בטנא עומרים ומוזנים לאחר קריאה ידנית. הסיכום העונתי מחושב מתוך המדידות שנרשמו, מתחילת אוגוסט ועד סוף יולי.</p><p>המדידות מייצגות נקודה אחת ביישוב, ולכן עשויות להיות שונות מנתוני תחנה מטאורולוגית סמוכה.</p></div><a className="official-card" href="https://ims.gov.il/he/AccumulatedRain" target="_blank" rel="noopener noreferrer"><span className="official-icon"><ExternalLink size={23}/></span><span className="eyebrow">להרחבת התמונה</span><strong>נתוני הגשם של השירות המטאורולוגי</strong><span>לצפייה במדידות הרשמיות ובנתונים מתחנות ברחבי הארץ</span><span className="official-link">מעבר לאתר השירות המטאורולוגי <ArrowLeft size={17}/></span></a></div></section></main>
 
-    <footer className="site-footer"><div className="container footer-inner"><div className="footer-brand"><Droplets size={22}/><span>גשם בטנא עומרים</span></div><p>מדידות מקומיות מהר חברון · נבנה באהבה לגשם</p><button onClick={() => setAdminOpen(true)}>כניסת מנהל</button></div></footer>
+    <footer className="site-footer"><div className="container footer-inner"><div className="footer-brand"><Droplets size={22}/><span>גשם בטנא עומרים</span></div><p>מדידות מקומיות מהר חברון · נבנה באהבה לגשם</p>{adminMode && <button onClick={() => setAdminOpen(true)}>כניסת מנהל</button>}</div></footer>
     {adminOpen && <AdminDialog onClose={() => setAdminOpen(false)} user={user} onLogin={login} onLogout={() => signOut(auth)} entries={entries} photos={photos} setMessage={setMessage}/>}
     {message && <div className="toast" role="status">{message}<button onClick={() => setMessage('')} aria-label="סגירה"><X size={16}/></button></div>}
   </div>;

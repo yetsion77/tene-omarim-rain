@@ -19,6 +19,7 @@ npm run dev
 - Firestore: `sites/teneOmarimRain/rainfallEntries` ו־`sites/teneOmarimRain/gallery`.
 - Storage: `tene-omarim-rain/gallery/`.
 - כניסת מנהל: Google Authentication, חשבון `yetsion@gmail.com` בלבד.
+- קישור לניהול: `https://yetsion77.github.io/tene-omarim-rain/?admin=1`. הקישור פותח את חלון הניהול; באתר הציבורי אין כפתור מנהל. הקישור עצמו אינו הרשאה — כללי Firebase מגבילים כתיבה לחשבון המורשה.
 - כללי הגישה נשמרים גם ב־`firestore.rules` וב־`storage.rules`. בעת עדכון שלהם יש לפרסם אותם ב־Firebase Console.
 
 עונת הגשם באתר נמשכת מ־1 באוגוסט עד 31 ביולי. נתוני החצר אינם נתוני תחנה רשמית. האתר אינו מושך נתונים אוטומטית מהשירות המטאורולוגי; הוא מקשר לעמוד הגשם הרשמי בלבד.
